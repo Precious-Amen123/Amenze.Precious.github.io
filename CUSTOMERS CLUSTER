@@ -1,0 +1,300 @@
+#INSTALL PACKAGES AND READ LIBRARIES
+
+install.packages("tidyverse")
+install.packages("cluster")
+install.packages("factoerxtra")
+install.packages("plotrix")
+library(tidyverse)
+library(cluster)
+library(factoextra)
+library(gridExtra)
+library(plotrix)
+theme_set(theme_bw())
+
+
+set.seed(1234)
+
+
+#Read the data
+customers = Mall_Customers
+customers
+
+
+#Some description of the data
+str(customers)  #Genre shown as a character. This needs to be changed to factor
+customers$Genre = as.factor(customers$Genre) #factor genre
+
+summary(customers)
+names(customers)
+
+
+#Checking for missing values
+any(is.na(customers))
+
+
+#visualize the data
+data.table::data.table(customers)
+
+
+#Statistical values of the data
+sd(customers$Age)
+sd(customers$Annual.Income..k..)
+sd(customers$Spending.Score..1.100.)
+IQR(customers$Age)     
+IQR(customers$Annual.Income..k..)  
+IQR(customers$Spending.Score..1.100.)  
+
+
+#For this analysis, we would not be needing the customerID column
+#converting the customerID column to NULL
+customers$CustomerID = NULL
+str(customers)  
+
+
+#EXPLORATORY DATA ANALYSIS (EDA)
+
+#GENDER
+gender = table(customers$Genre)  
+barplot(gender, main = "BarPlot of Gender Comparison",
+        col = rainbow(2),
+        ylab = "Count",
+        xlab = "Gender",
+        legend = rownames(gender))
+#From the BarPlot, Female Gender has the higher count than the Male Gender
+
+#Plotting the percentage of both Gender
+
+pct = round((gender/sum(gender))*100)
+disp = paste(c("Female", "Male"), " ", pct, "%", sep = " ")
+pie3D(gender, labels = disp, main="Percentage of Gender")
+# Female have a percentage of 56 and Male 44
+
+#AGE
+hist(customers$Age,
+     col = "Red",
+     ylab = "Count",
+     xlab = "Age Distribution",
+     labels = TRUE,
+     main = "AGE")
+
+#Checking for outlier using BoxPlot
+
+boxplot(customers$Age,
+        col = "Red",
+        main = "Boxplot for Age",
+        labels = TRUE)
+#From the BoxPlot, there is no outlier
+
+#ANNUAL INCOME
+hist(customers$Annual.Income..k..,
+     col = "Red",
+     ylab = "Count",
+     xlab = "Annual Income",
+     labels = TRUE,
+     main = "ANNUAL INCOME")
+
+plot(density(customers$Annual.Income..k..),
+     col = "Red",
+     ylab = "Count",
+     xlab = "Annual Income",
+     main = "DISTRIBUTION OF ANNUAL INCOME")
+polygon(density(customers$Annual.Income..k..),
+        col = "Red")
+
+#Checking for outlier
+
+boxplot(customers$Annual.Income..k..,
+        col = "Red",
+        main = "Boxplot for Annual Income",
+        labels = TRUE)
+#The Boxplot showed an one outlier. this would be ignored, it will not be affecting the data and analysis
+
+#SPENDING
+hist(customers$Spending.Score..1.100.,
+     col = "Red",
+     ylab = "Count",
+     xlab = "Spending",
+     labels = TRUE,
+     main = "SPENDING")
+
+plot(density(customers$Spending.Score..1.100.),
+     col = "Red",
+     ylab = "Count",
+     xlab = "Spending",
+     main = "DISTRIBUTION OF SPENDING")
+polygon(density(customers$Spending.Score..1.100.),
+        col = "Red")
+
+
+#Checking for outlier
+
+boxplot(customers$Spending.Score..1.100.,
+        col = "Red",
+        main = "Boxplot for Spending",
+        labels = TRUE)
+#From the BoxPlot, there is no outlier
+
+#NORMALIZING THE DATASET
+#First convert the gender column to null
+customers$Genre = NULL
+
+customer_sc = as.data.frame(scale(customers))
+customer_sc
+
+#Calculate the distance using Euclidean method
+customer_dist = dist(customer_sc, method = 'euclidean')
+
+
+#K-MEANS CLUSTERING
+#Using k-means algorithm: grouping the data into 2 clusters (where the number of clusters must be set)
+
+k2 = kmeans(customer_sc, centers = 2, nstart = 25)
+k2 #printing the result
+
+fviz_cluster(k2, data = customer_sc)
+
+#Using different values of k to examine the differences in results, execute same process for 
+#k = 3, 4, 5 clusters
+
+k3 = kmeans(customer_sc, centers = 3, nstart = 25)
+k3
+fviz_cluster(k3, data = customer_sc)a
+
+k4 = kmeans(customer_sc, centers = 4, nstart = 25)
+k4
+fviz_cluster(k4, data = customer_sc)
+
+k5 = kmeans(customer_sc, centers = 5, nstart = 25)
+k5
+fviz_cluster(k5, data = customer_sc)
+
+#Plotting the results to compare
+p1 = fviz_cluster(k2, geom = "point", data = customer_sc) + ggtitle("k = 2")
+p2 = fviz_cluster(k3, geom = "point", data = customer_sc) + ggtitle("k = 3")
+p3 = fviz_cluster(k4, geom = "point", data = customer_sc) + ggtitle("k = 4")
+p4 = fviz_cluster(k5, geom = "point", data = customer_sc) + ggtitle("k = 5")
+
+grid.arrange(p1, p2, p3, p4, nrow = 2)
+
+#DETERMINING THE OPTIMAL NUMBER OF CLUSTERS
+#USING THE ELBOW METHOD
+
+
+#Function to compute the total within-cluster sum of square
+cus_wss = function(k) {
+  kmeans(customer_sc, k, nstart = 10)$tot.withinss
+}
+
+#Compute and plot wss for k=1 to k=15
+k.values = 1:15
+
+#Extract wss
+cus_wss_values = map_dbl(k.values, cus_wss)
+
+#plot the result
+plot(k.values, cus_wss_values,
+     type = "b", 
+     pch = 19,
+     frame = FALSE,
+     xlab = "Number of Clusters k",
+     ylab = "Total witin-clusters sum of squares")
+
+#Alternatively, using a method process wrapped in a single function
+fviz_nbclust(customer_sc, kmeans, method = "wss")
+
+
+#USING SILHOUETTE METHOD
+cus_sil = function(k) {
+  km.res = kmeans(customer_sc, centers = k, nstart = 25)
+  ss = silhouette(km.res$cluster, dist(customer_sc))
+  mean(ss[,3])
+}
+
+#Compute and plot for k=1 to k=15
+k.values_sil = 2:15
+
+#Extract avg silhoutte for 1-15 clusters
+avg_sil_cus = map_dbl(k.values_sil, cus_sil)
+plot(k.values_sil, avg_sil_cus,
+     type = "b",
+     pch = 19,
+     frame = FALSE,
+     xlab = "Number of Clusters k",
+     ylab = "Average Silhoutte")
+
+#Alternatively using fviz_nbclust  
+fviz_nbclust(customer_sc, kmeans, method = "silhouette")
+
+
+
+#USING GAP STATISTIC METHOD
+#set.seed(123)
+gap_stat = clusGap(customer_sc, FUN = kmeans, nstart = 25,
+                   K.max = 10, B = 50)
+#print the result
+print(gap_stat, method = "firstmax")
+
+#visualizing the result
+fviz_gap_stat(gap_stat)
+
+#Using 8 as the optimal number of k
+k8 = kmeans(customer_sc, 8, nstart = 25)
+k8
+
+
+#visualizing the final result
+fviz_cluster(k8, data = customer_sc)
+
+pccluser = prcomp(customer_sc, scale. = FALSE)
+summary(pccluser)
+
+
+
+#CREATING A FINAL TABLE SHOWING THE CUSTOMER'S CLUSTERS
+
+Mall_Customers_final = Mall_Customers
+Mall_Customers_final$Cluster = factor(k8$cluster)
+head(Mall_Customers_final)
+
+#VISUALIZING THE FINAL TABLE
+
+cluster = table(Mall_Customers_final$Cluster)  
+barplot(cluster, main = "BarPlot of Cluster",
+        col = rainbow(8),
+        ylab = "Count",
+        xlab = "Cluster",
+        legend = rownames(cluster))
+
+#PLOTTING THE PERCENTAGE OF THE CLUSTER
+
+pct_cluster = round((cluster/sum(cluster))*100)
+disp_cluster = paste(c("cl 1", "cl 2", "cl 3", "cl 4", "cl 5", "cl 6", "cl 7", "cl 8"), " ", pct_cluster, "%", sep = " ")
+pie3D(cluster, labels = disp_cluster, main="Percentage of Cluster")
+
+
+# IDENTIFYING THE CLUSTERS AS A TABLE
+cluster_one = subset(Mall_Customers_final, Cluster == 1)
+cluster_one
+
+cluster_two = subset(Mall_Customers_final, Cluster == 2)
+cluster_two
+
+cluster_three = subset(Mall_Customers_final, Cluster == 3)
+cluster_three
+
+cluster_four = subset(Mall_Customers_final, Cluster == 4)
+cluster_four
+
+cluster_five = subset(Mall_Customers_final, Cluster == 5)
+cluster_five
+
+cluster_six = subset(Mall_Customers_final, Cluster == 6)
+cluster_six
+
+cluster_seven = subset(Mall_Customers_final, Cluster == 7)
+cluster_seven
+
+cluster_eight = subset(Mall_Customers_final, Cluster == 8)
+cluster_eight
+
+# WE CAN CONTINUE BY CALCULATING THE PERCENTAGE OF MALE AND FEMALE IN THE CLUSTER TABLES
