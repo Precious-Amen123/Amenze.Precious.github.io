@@ -1,0 +1,10 @@
+install.packages("tidyverse")
+install.packages("ggplot")
+install.packages("tidyr")
+install.packages("readr")
+library("tidyverse")
+library("ggplot2")
+library("tidyr")
+library("readr")
+
+df.raw <- read.csv(file ='Pisa scores 2013 - 2015 Data.csv', fileEncoding="UTF-8-BOM", na.strings = '..')
