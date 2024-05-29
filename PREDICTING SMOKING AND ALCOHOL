@@ -1,0 +1,1293 @@
+  # Reduce warnings
+import warnings
+warnings.filterwarnings('ignore')
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from google.colab import files
+uploaded = files.upload()
+import io
+smoke_alcohol = pd.read_csv(io.BytesIO(uploaded['smoke_alcohol.csv']))
+smoke_alcohol.head(20)
+# Checking for the number of rows in the dataset
+print('Number of rows:', len(smoke_alcohol))
+
+# Dimensionality of the dataset
+print('Dimension:', smoke_alcohol.shape)
+for column in smoke_alcohol.columns:
+    unique_values = smoke_alcohol[column].unique()
+    print(column, unique_values)
+# Getting to know the data types of the dataset
+smoke_alcohol.info()
+# Basic Statistics of the dataset
+smoke_alcohol.describe().T
+# Identifying missing value
+smoke_alcohol.isnull().sum()
+duplicate_rows = smoke_alcohol[smoke_alcohol.duplicated()]
+
+# Print duplicate rows
+if not duplicate_rows.empty:
+    print("Duplicate rows:")
+    print(duplicate_rows)
+
+    # Drop duplicate rows
+    smoke_alcohol.drop_duplicates(inplace=True)
+    print("Duplicates removed.")
+else:
+    print("No duplicates found.")
+# Checking for the number of rows in the dataset
+print('Number of rows:', len(smoke_alcohol))
+
+# Dimensionality of the dataset
+print('Dimension:', smoke_alcohol.shape)
+EXPLORATORY DATA ANALYSIS
+# Count of Smokers
+smoke_count = smoke_alcohol.groupby(['SMK_stat_type_cd'], as_index=False).agg(n = ('SMK_stat_type_cd', 'count'))
+smoke_count
+labels = ['Never', 'Quit', 'Smoker']
+
+# Calculate the size of each group
+group_sizes = smoke_alcohol.groupby('SMK_stat_type_cd').size()
+
+# Calculate the percentages and round them to the nearest integer
+percentages = (group_sizes / group_sizes.sum() * 100).round(0)
+
+# Plot the pie chart with custom labels and percentages
+plt.pie(group_sizes, labels=labels, autopct='%1.2f%%')
+plt.title('Percentage of Smokers')
+
+# Show the plot
+plt.show()
+# Count of Alcoholics
+drink_count = smoke_alcohol.groupby(['DRK_YN'], as_index=False).agg(n = ('DRK_YN', 'count'))
+drink_count
+labels = ['Non-Alcoholic', 'Alcoholic']
+
+# Calculate the size of each group
+group_sizes = smoke_alcohol.groupby('DRK_YN').size()
+
+# Calculate the percentages and round them to the nearest integer
+percentages = (group_sizes / group_sizes.sum() * 100).round(0)
+
+# Plot the pie chart with custom labels and percentages
+plt.pie(group_sizes, labels=labels, autopct='%1.2f%%')
+plt.title('Percentage of Drinkers')
+
+# Show the plot
+plt.show()
+plt.savefig('per drinker')
+# Count of gender
+sex_count = smoke_alcohol.groupby(['sex'], as_index=False).agg(n = ('sex', 'count'))
+sex_count
+labels = ['Female', 'Male']
+
+# Calculate the size of each group
+group_sizes = smoke_alcohol.groupby('sex').size()
+
+# Calculate the percentages and round them to the nearest integer
+percentages = (group_sizes / group_sizes.sum() * 100).round(0)
+
+# Plot the pie chart with custom labels and percentages
+plt.pie(group_sizes, labels=labels, autopct='%1.2f%%')
+plt.title('Percentage of Gender')
+
+# Show the plot
+plt.show()
+# Plotting gender with smoking status
+fig = plt.figure(figsize=(12,6))
+
+ax = sns.countplot(x=smoke_alcohol['SMK_stat_type_cd'], hue='sex', data=smoke_alcohol,
+                linewidth=0)
+
+plt.text(3, 3, "1 - Never\n2 - Used to smoke\n3 - Still smoke")
+
+ax.set_xlabel('Plotting sex with smoking status', fontsize=15)
+
+ax.set_ylabel(" ")
+# Plotting result in percentage
+
+fig, ax = plt.subplots(1,2, figsize=(15,5))
+
+# Extracting unique smoking statuses
+labels = ['Non-smoker', 'Used to smoke', 'Smoker']
+
+# Filtering data for males and females
+male_data = smoke_alcohol[smoke_alcohol['sex'] == 'Male']
+female_data = smoke_alcohol[smoke_alcohol['sex'] == 'Female']
+
+# Counting smoking statuses for males and females
+male_smoke = male_data['SMK_stat_type_cd'].value_counts()
+female_smoke = female_data['SMK_stat_type_cd'].value_counts()
+
+# Plotting pie chart for males
+ax[0].pie(male_smoke, labels=labels, autopct='%1.2f%%')
+ax[0].set_title('Comparing smoking status for males')
+
+# Plotting pie chart for females
+ax[1].pie(female_smoke, labels=labels, autopct='%1.2f%%')
+ax[1].set_title('Comparing smoking status for females')
+
+plt.show()
+
+# Plotting sex with drinking status
+
+fig = plt.figure(figsize=(12,6))
+
+ax = sns.countplot(x=smoke_alcohol['sex'], hue='DRK_YN', data=smoke_alcohol,
+                linewidth=0)
+
+plt.text(2, 2, "Y - Alcoholic\nN - Non_Alcoholic")
+
+ax.set_xlabel('Plotting sex with drinking status', fontsize=15)
+
+ax.set_ylabel(" ")
+# Plotting result in percentage
+
+fig, ax = plt.subplots(1, 2, figsize=(15, 6))
+
+
+# Count occurrences of drinking status for males and females
+male_counts = male_data['DRK_YN'].value_counts()
+female_counts = female_data['DRK_YN'].value_counts()
+
+# Plotting pie chart for males
+ax[0].pie(male_counts, labels=male_counts.index, autopct='%1.2f%%', startangle=140)
+ax[0].set_title('Male Drinking Status')
+
+# Plotting pie chart for females
+ax[1].pie(female_counts, labels=female_counts.index, autopct='%1.2f%%', startangle=140)
+ax[1].set_title('Female Drinking Status')
+
+plt.show()
+
+# Plotting smoking and drinkers
+
+fig = plt.figure(figsize=(12,6))
+
+ax = sns.countplot(x=smoke_alcohol['DRK_YN'], hue='SMK_stat_type_cd', data=smoke_alcohol,
+                linewidth=0)
+
+plt.text(2, 2, "1 - Never\n2 - Used to smoke\n3 - Still smoke")
+
+ax.set_xlabel('Plotting smoking and drinkers', fontsize=15)
+
+ax.set_ylabel(" ")
+fig, ax = plt.subplots(1, 2, figsize=(15, 5))
+
+# Filter data for drinkers and non-drinkers
+drinkers_data = smoke_alcohol[smoke_alcohol['DRK_YN'] == 'Y']
+non_drinkers_data = smoke_alcohol[smoke_alcohol['DRK_YN'] == 'N']
+
+# Count smoking status for drinkers
+drinkers_smoke_counts = drinkers_data['SMK_stat_type_cd'].value_counts()
+
+# Plotting pie chart for drinkers
+ax[0].pie(drinkers_smoke_counts, labels=labels, autopct='%1.2f%%')
+ax[0].set_title('Smoking Habits among Alcoholics')
+
+# Count smoking status for non-drinkers
+non_drinkers_smoke_counts = non_drinkers_data['SMK_stat_type_cd'].value_counts()
+
+# Plotting pie chart for non-drinkers
+ax[1].pie(non_drinkers_smoke_counts, labels=labels, autopct='%1.2f%%')
+ax[1].set_title('Smoking Habits among Non-Alcoholics')
+
+plt.show()
+
+
+# Duplicate the dataframe for further analysis
+df = smoke_alcohol.copy()
+df
+df.shape
+# Age with Alcohol
+
+age_drink = df.groupby(['age', 'DRK_YN'], as_index=False).agg(n = ('age', 'count'))
+age_drink.head()
+# Set the figure size
+plt.figure(figsize=(12, 6))
+
+# Plot the line plot
+sns.lineplot(x='age', y='n', hue='DRK_YN', data=age_drink, marker='o')
+
+# Set the labels and title
+plt.xlabel('Age', fontsize=15)
+plt.ylabel('Count', fontsize=15)
+plt.title('Count of Drinking Status by Age', fontsize=15)
+
+# Show the plot
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+plt.legend(title='Drinking Status', loc='best')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+# Age with smoking
+
+age_smoke = df.groupby(['age', 'SMK_stat_type_cd'], as_index=False).agg(n = ('age', 'count'))
+age_smoke.head()
+# Set the figure size
+plt.figure(figsize=(12, 6))
+
+
+# Plot the line plot
+sns.lineplot(x='age', y='n', hue='SMK_stat_type_cd', data=age_smoke, marker='o')
+
+# Set the labels and title
+plt.xlabel('Age', fontsize=15)
+plt.ylabel('Count', fontsize=15)
+plt.title('Count of Smoking Status by Age', fontsize=15)
+
+# Show the plot
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+plt.legend(title='Smoking Status', loc='best')
+plt.grid(True)
+plt.text(2, 2, "1 - Never\n2 - Used to smoke\n3 - Still smoke")
+plt.tight_layout()
+plt.show()
+# weight with Alcohol
+
+weight_drink = df.groupby(['weight', 'DRK_YN'], as_index=False).agg(n = ('weight', 'count'))
+
+weight_drink.head()
+# Set the figure size
+plt.figure(figsize=(12, 6))
+
+
+# Plot the line plot
+sns.lineplot(x='weight', y='n', hue='DRK_YN', data=weight_drink, marker='o')
+
+# Set the labels and title
+plt.xlabel('Weight', fontsize=15)
+plt.ylabel('Count', fontsize=15)
+plt.title('Count of Drinking Status by Weight', fontsize=15)
+
+# Show the plot
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+plt.legend(title='Drinking Status', loc='best')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+# Weight with smoking
+
+weight_smoke = df.groupby(['weight', 'SMK_stat_type_cd'], as_index=False).agg(n = ('weight', 'count'))
+weight_smoke.head()
+# Set the figure size
+plt.figure(figsize=(12, 6))
+
+
+# Plot the line plot
+sns.lineplot(x='weight', y='n', hue='SMK_stat_type_cd', data=weight_smoke, marker='o')
+
+# Set the labels and title
+plt.xlabel('Weight', fontsize=15)
+plt.ylabel('Count', fontsize=15)
+plt.title('Count of Smoking Status by Weight', fontsize=15)
+
+# Show the plot
+plt.xticks(fontsize=12)
+plt.yticks(fontsize=12)
+plt.legend(title='Smoking Status', loc='best')
+plt.grid(True)
+plt.text(2, 2, "1 - Never\n2 - Used to smoke\n3 - Still smoke")
+plt.tight_layout()
+plt.show()
+Checking for outliers and displaying all statistics in a box plot
+
+import plotly.graph_objects as go
+from plotly.offline import iplot, init_notebook_mode
+fig = go.Figure()
+fig.add_box(x=df['age'], text=df['age'])
+fig.update_layout(title='Distribution of Age Data',
+                  xaxis_title='Age')
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['height'], text=df['height'])
+fig.update_layout(title='Distribution of Height Data',
+                  xaxis_title='Height')
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['weight'], text=df['weight'])
+fig.update_layout(title='Distribution of Weight Data',
+                  xaxis_title='Weight')
+
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['waistline'], text=df['waistline'])
+fig.update_layout(title='Distribution of Waistline Data',
+                  xaxis_title='Waistline')
+
+fig.update_xaxes(range=[0, 150])  # Adjust the range as needed
+
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['sight_left'], text=df['sight_left'])
+fig.update_layout(title='Distribution of Left Sight Data',
+                  xaxis_title='Left Sight')
+
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['sight_right'], text=df['sight_right'])
+fig.update_layout(title='Distribution of Right Sight Data',
+                  xaxis_title='Right Sight')
+
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['SBP'], text=df['SBP'])
+fig.update_layout(title='Distribution of SBP Data',
+                  xaxis_title='SBP')
+
+fig.update_xaxes(range=[0, 200])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['DBP'], text=df['DBP'])
+fig.update_layout(title='Distribution of DBP Data',
+                  xaxis_title='DBP')
+
+#fig.update_xaxes(range=[100, 200])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['BLDS'], text=df['BLDS'])
+fig.update_layout(title='Distribution of BLDS Data',
+                  xaxis_title='BLDS')
+
+fig.update_xaxes(range=[0, 200])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['tot_chole'], text=df['tot_chole'])
+fig.update_layout(title='Distribution of tot_chole Data',
+                  xaxis_title='tot_chole')
+
+fig.update_xaxes(range=[0, 500])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['HDL_chole'], text=df['HDL_chole'])
+fig.update_layout(title='Distribution of HDL_chole Data',
+                  xaxis_title='HDL_chole')
+
+fig.update_xaxes(range=[0, 200])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['LDL_chole'], text=df['LDL_chole'])
+fig.update_layout(title='Distribution of LDL_chole Data',
+                  xaxis_title='LDL_chole')
+
+fig.update_xaxes(range=[0, 500])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['triglyceride'], text=df['triglyceride'])
+fig.update_layout(title='Distribution of triglyceride Data',
+                  xaxis_title='triglyceride')
+
+fig.update_xaxes(range=[0, 500])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['hemoglobin'], text=df['hemoglobin'])
+fig.update_layout(title='Distribution of hemoglobin Data',
+                  xaxis_title='hemoglobin')
+
+#fig.update_xaxes(range=[0, 500])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['SGOT_AST'], text=df['SGOT_AST'])
+fig.update_layout(title='Distribution of SGOT_AST Data',
+                  xaxis_title='SGOT_AST')
+
+fig.update_xaxes(range=[0, 100])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['SGOT_ALT'], text=df['SGOT_ALT'])
+fig.update_layout(title='Distribution of SGOT_ALT Data',
+                  xaxis_title='SGOT_ALT')
+
+fig.update_xaxes(range=[0, 100])
+iplot(fig)
+fig = go.Figure()
+fig.add_box(x=df['gamma_GTP'], text=df['gamma_GTP'])
+fig.update_layout(title='Distribution of gamma_GTP Data',
+                  xaxis_title='gamma_GTP')
+
+fig.update_xaxes(range=[0, 100])
+iplot(fig)
+
+HANDLING OUTLIERS
+
+
+# Removing outlier using interquartile range (IQR) method
+
+col = ['height', 'weight', 'waistline', 'sight_left', 'sight_right', 'SBP',
+       'DBP', 'BLDS', 'tot_chole', 'HDL_chole', 'LDL_chole', 'triglyceride',
+       'hemoglobin', 'SGOT_AST', 'SGOT_ALT', 'gamma_GTP']
+
+Q1 = df[col].quantile(0.25)
+Q3 = df[col].quantile(0.75)
+IQR = Q3 - Q1
+
+df = df[~((df[col] < (Q1 - 1.5 * IQR)) |(df[col] > (Q3 + 1.5 * IQR))).any(axis=1)]
+df
+CORRELATION BETWEEN INDEPENDENT AND TARGET VARIABLES
+
+# Converting object to integer
+df['sex'] = df['sex'].replace({'Male': 0, 'Female': 1})
+df['DRK_YN'] = df['DRK_YN'].replace({'N': 0, 'Y':1})
+
+# Converting smoking status to integer
+df = df.astype({"SMK_stat_type_cd":'int64'})
+
+df
+# Split the dataset into features and target variable
+X = df.drop(columns=['SMK_stat_type_cd', 'DRK_YN'])
+y_smoke = df['SMK_stat_type_cd']
+y_drink = df['DRK_YN']
+# Calculate correlation with target variable
+corr_smoke = X.corrwith(y_smoke)
+corr_smoke
+
+# Plotting the correlation
+plt.figure(figsize=(10, 6))
+sns.barplot(x=corr_smoke.values, y=corr_smoke.index)
+plt.title('Correlation with Target Variable (smoke)')
+plt.xlabel('Correlation')
+plt.ylabel('Feature')
+plt.show()
+# Calculate correlation with target variable
+corr_drink = X.corrwith(y_drink)
+corr_drink
+
+# Plotting the correlation
+plt.figure(figsize=(10, 6))
+sns.barplot(x=corr_drink.values, y=corr_drink.index)
+plt.title('Correlation with Target Variable (drink)')
+plt.xlabel('Correlation')
+plt.ylabel('Feature')
+plt.show()
+EXPLANATION OF THE CORRELATION ANALYSIS:
+
+WEAK TO MODERATE INFLUENCE:
+The weak to moderate correlation between independent variables implies that changes in one variable are not strongly associated with changes in another variable. In the context of classification, this suggests that the independent variables have relatively independent effects on the target variable.
+
+LOW COLLINEARITY: Low correlation between independent variables (features) reduces the issue of multicollinearity. Multicollinearity occurs when independent variables are highly correlated with each other, making it difficult to discern their individual effects on the target variable. In the absence of strong correlations, each independent variable can contribute unique information to the classification model.
+FEATURE IMPORTANCE: Weak to moderate correlations indicate that each independent variable may have its own importance in predicting the target variable. In classification models, features with weak to moderate correlations may still provide valuable predictive power, even if they are not strongly correlated with the target variable or with each other.
+The quality and relevance of the data are crucial factors in determining whether a dataset is "good" for classification. Low correlations between independent variables do not guarantee data quality. It's essential to assess the completeness, accuracy, and relevance of the dataset for the classification task at hand.
+CHECKING FOR IMBALANCE IN THE CLASSES OF THE TARGET VARIABLES (DRINK AND SMOKE)
+imb_drink = y_drink.value_counts().reset_index()
+imb_drink.columns = ['index', 'DRK_YN']
+sns.barplot(x = "index", y = "DRK_YN", data=imb_drink)
+plt.xlabel("Target")
+plt.ylabel("Count")
+class_ratios_drink = y_drink.value_counts(normalize=True)
+class_ratios_drink
+imb_smoke = y_smoke.value_counts().reset_index()
+imb_smoke.columns = ['index', 'SMK_stat_type_cd']
+sns.barplot(x = "index", y = "SMK_stat_type_cd", data=imb_smoke)
+plt.xlabel("Target")
+plt.ylabel("Count")
+class_ratios_smoke = y_smoke.value_counts(normalize=True)
+class_ratios_smoke
+PACKAGES FOR MODELLING
+# Train Test Split
+from sklearn.model_selection import train_test_split
+
+# Metrics
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+from sklearn.metrcis import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.feature_selection import SelectFromModel
+from sklearn.feature_selection import SelectKBest, f_classif
+from sklearn.model_selection import cross_val_score
+
+# Scaling
+from sklearn.preprocessing import StandardScaler
+
+# Models
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import GradientBoostingClassifier
+DATA NORMALIZATION/STANDARDIZATION
+X
+# Initialize StandardScaler
+scaler = StandardScaler()
+
+# Fit the scaler to the data and transform the data
+scaled_X = scaler.fit_transform(X)
+DEFINING THE PREDICTOR VARIABLES X AND PREDICTED VARIABLES y
+print('Predictor:', scaled_X, sep='\n')
+print('Predict:', y_drink, sep='\n')
+print('Predict:', y_smoke, sep='\n')
+SPLITTING INTO TRAIN AND TEST SETS - DRINKING PREDICTION
+# Split the dataset into training and test sets
+scaled_X_train, scaled_X_test, y_drink_train, y_drink_test  = train_test_split(scaled_X, y_drink, test_size=0.2, random_state=42)
+
+# Print the shapes of the resulting datasets
+print(scaled_X_train.shape, y_drink_train.shape)
+print(scaled_X_test.shape, y_drink_test.shape)
+TRAIN THE MODEL - RANDOM FOREST
+# Instantiating the classifier
+rfc = RandomForestClassifier()
+
+# Fit the model
+rfc.fit(scaled_X_train, y_drink_train)
+# Prediction on test set
+y_drink_pred = rfc.predict(scaled_X_test)
+PERFORMANCE EVALUATION
+accuracy = accuracy_score(y_drink_test, y_drink_pred)
+precision = precision_score(y_drink_test, y_drink_pred)
+recall = recall_score(y_drink_test, y_drink_pred)
+f1_score_value = f1_score(y_drink_test, y_drink_pred)
+roc_auc = roc_auc_score(y_drink_test, y_drink_pred)
+cm = confusion_matrix(y_drink_test, y_drink_pred)
+
+# Print the performance metrics
+print("Accuracy:", accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("ROC AUC Score:", roc_auc, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+# Plotting AUC_ROC
+
+fpr, tpr, thresholds = roc_curve(y_drink_test, y_drink_pred)
+
+plt.figure()
+plt.plot(fpr, tpr, label='RFC (AUC = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Random Forest Classifier roc_curve')
+plt.legend(loc="lower right")
+plt.show()
+# Plotting the confusion matrix
+fig, ax = plt.subplots(figsize=(8, 8))
+ax.imshow(cm)
+ax.grid(False)
+ax.xaxis.set(ticks=(0, 1), ticklabels=('Predicted 0s', 'Predicted 1s'))
+ax.yaxis.set(ticks=(0, 1), ticklabels=('Actual 0s', 'Actual 1s'))
+ax.set_ylim(1.5, -0.5)
+for i in range(2):
+    for j in range(2):
+        ax.text(j, i, cm[i, j], ha='center', va='center', color='red')
+plt.show()
+Feature importances reflect how much each feature contributes to the overall predictive power of the Random Forest classifier. Features with higher importances are considered more influential in the decision-making process of the classifier.
+# Get feature importances
+feature_importances = rfc.feature_importances_
+feature_names = X.columns
+
+# Plot Feature Importance
+plt.figure(figsize=(10, 6))
+plt.barh(range(len(feature_importances)), feature_importances, align='center')
+plt.yticks(range(len(feature_importances)), feature_names)
+plt.xlabel('Feature importance')
+plt.ylabel('Feature')
+plt.title('Feature Importances of Random Forest Classifier')
+plt.show()
+# Fit the model using each importance
+threshold = 0.05
+
+# Select the top features based on feature importance
+selector = SelectFromModel(rfc, threshold=threshold, prefit=True)
+
+# Fit into the training data
+selector.fit(scaled_X_train, y_drink_train)
+
+# Transform the training data to the selected feature importance
+selected_X_train = selector.transform(scaled_X_train)
+selected_X_test = selector.transform(scaled_X_test)
+# Initialize a new model with the selected features
+rfc_feature_select = RandomForestClassifier(n_estimators=100, max_depth=3, random_state=42)
+
+# fit the new model
+rfc_feature_select.fit(selected_X_train, y_drink_train)
+# Prediction on the selected test set
+y_drink_pred= rfc_feature_select.predict(selected_X_test)
+test_accuracy = accuracy_score(y_drink_test, y_drink_pred)
+precision = precision_score(y_drink_test, y_drink_pred)
+recall = recall_score(y_drink_test, y_drink_pred)
+f1_score_value = f1_score(y_drink_test, y_drink_pred)
+roc_auc = roc_auc_score(y_drink_test, y_drink_pred)
+mcc = matthews_corrcoef(y_drink_test, y_drink_pred)
+kappa = cohen_kappa_score(y_drink_test, y_drink_pred)
+cm = confusion_matrix(y_drink_test, y_drink_pred)
+
+# Print the performance metrics
+print("Test Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("ROC AUC Score:", roc_auc, sep='\n')
+print("MCC score:", mcc, sep='\n')
+print("Cohen's kappa Coeff:", kappa, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+LOGISTIC RGRESSION
+# Instantiating the classifier
+log_reg = LogisticRegression()
+
+# Fit the model
+log_reg.fit(scaled_X_train, y_drink_train)
+# Prediction on test set
+y_drink_pred = log_reg.predict(scaled_X_test)
+PERFORMANCE EVALUATION
+test_accuracy = accuracy_score(y_drink_test, y_drink_pred)
+precision = precision_score(y_drink_test, y_drink_pred)
+recall = recall_score(y_drink_test, y_drink_pred)
+f1_score_value = f1_score(y_drink_test, y_drink_pred)
+roc_auc = roc_auc_score(y_drink_test, y_drink_pred)
+mcc = matthews_corrcoef(y_drink_test, y_drink_pred)
+kappa = cohen_kappa_score(y_drink_test, y_drink_pred)
+cm = confusion_matrix(y_drink_test, y_drink_pred)
+
+# Print the performance metrics
+print("Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("ROC AUC Score:", roc_auc, sep='\n')
+print("MCC score:", mcc, sep='\n')
+print("Cohen's kappa Coeff:", kappa, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+# Plotting AUC_ROC
+
+fpr, tpr, thresholds = roc_curve(y_drink_test, y_drink_pred)
+
+plt.figure()
+plt.plot(fpr, tpr, label='RFC (AUC = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Logistic Regression roc_curve')
+plt.legend(loc="lower right")
+plt.show()
+# Plotting the confusion matrix
+fig, ax = plt.subplots(figsize=(8, 8))
+ax.imshow(cm)
+ax.grid(False)
+ax.xaxis.set(ticks=(0, 1), ticklabels=('Predicted 0s', 'Predicted 1s'))
+ax.yaxis.set(ticks=(0, 1), ticklabels=('Actual 0s', 'Actual 1s'))
+ax.set_ylim(1.5, -0.5)
+for i in range(2):
+    for j in range(2):
+        ax.text(j, i, cm[i, j], ha='center', va='center', color='red')
+plt.show()
+FEATURE IMPORTANCE
+
+# FEATURE IMPORTANCE
+
+coeff = log_reg.coef_
+
+avg_importance = np.mean(np.abs(coeff), axis=0)
+feature_importance = pd.DataFrame({'Feature': X.columns, 'Importance': avg_importance})
+feature_importance = feature_importance.sort_values('Importance', ascending=True)
+feature_importance.plot(x='Feature', y='Importance', kind='barh', figsize=(10, 6))
+log_reg_feat = LogisticRegression(C=0.2, penalty="l2", dual=False).fit(scaled_X_train, y_drink_train)
+model = SelectFromModel(log_reg_feat, prefit=True)
+# Fit into the training data
+model.fit(scaled_X_train, y_drink_train)
+
+# Transform the training data to the selected feature importance
+model_X_train = model.transform(scaled_X_train)
+model_X_test = model.transform(scaled_X_test)
+# fit the new model
+log_reg_feat.fit(model_X_train, y_drink_train)
+# Prediction on the selected test set
+y_drink_pred= log_reg_feat.predict(model_X_test)
+test_accuracy = accuracy_score(y_drink_test, y_drink_pred)
+precision = precision_score(y_drink_test, y_drink_pred)
+recall = recall_score(y_drink_test, y_drink_pred)
+f1_score_value = f1_score(y_drink_test, y_drink_pred)
+roc_auc = roc_auc_score(y_drink_test, y_drink_pred)
+mcc = matthews_corrcoef(y_drink_test, y_drink_pred)
+kappa = cohen_kappa_score(y_drink_test, y_drink_pred)
+cm = confusion_matrix(y_drink_test, y_drink_pred)
+
+# Print the performance metrics
+print("Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("ROC AUC Score:", roc_auc, sep='\n')
+print("MCC score:", mcc, sep='\n')
+print("Cohen's kappa Coeff:", kappa, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+GRADIENT BOOSTING CLASSIFIER
+# Instantiate the model
+gbc = GradientBoostingClassifier(n_estimators=100, max_depth=3, learning_rate=1.0)
+
+# Train the model
+gbc.fit(scaled_X_train, y_drink_train)
+# Prediction on test set
+y_drink_pred = gbc.predict(scaled_X_test)
+test_accuracy = accuracy_score(y_drink_test, y_drink_pred)
+precision = precision_score(y_drink_test, y_drink_pred)
+recall = recall_score(y_drink_test, y_drink_pred)
+f1_score_value = f1_score(y_drink_test, y_drink_pred)
+roc_auc = roc_auc_score(y_drink_test, y_drink_pred)
+mcc = matthews_corrcoef(y_drink_test, y_drink_pred)
+kappa = cohen_kappa_score(y_drink_test, y_drink_pred)
+cm = confusion_matrix(y_drink_test, y_drink_pred)
+
+# Print the performance
+print("Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("ROC AUC Score:", roc_auc, sep='\n')
+print("MCC score:", mcc, sep='\n')
+print("Cohen's kappa Coeff:", kappa, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+# Plotting AUC_ROC
+
+fpr, tpr, thresholds = roc_curve(y_drink_test, y_drink_pred)
+
+plt.figure()
+plt.plot(fpr, tpr, label='RFC (AUC = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Gradient Boosting Classifier roc_curve')
+plt.legend(loc="lower right")
+plt.show()
+# Plotting the confusion matrix
+fig, ax = plt.subplots(figsize=(8, 8))
+ax.imshow(cm)
+ax.grid(False)
+ax.xaxis.set(ticks=(0, 1), ticklabels=('Predicted 0s', 'Predicted 1s'))
+ax.yaxis.set(ticks=(0, 1), ticklabels=('Actual 0s', 'Actual 1s'))
+ax.set_ylim(1.5, -0.5)
+for i in range(2):
+    for j in range(2):
+        ax.text(j, i, cm[i, j], ha='center', va='center', color='red')
+plt.show()
+FEATURE IMPORTANCE
+feature_importance  = gbc.feature_importances_
+
+feature_names = X.columns
+
+# Plot Feature Importance
+plt.figure(figsize=(10, 6))
+plt.barh(range(len(feature_importance)), feature_importance, align='center')
+plt.yticks(range(len(feature_importance)), feature_names)
+plt.xlabel('Feature importance')
+plt.ylabel('Feature')
+plt.title('Feature Importances of GBClassifier')
+plt.show()
+# Fit the model using each importance
+threshold = 0.05
+
+# Select the top features based on feature importance
+selector = SelectFromModel(gbc, threshold=threshold, prefit=True)
+
+# Fit into the training data
+selector.fit(scaled_X_train, y_drink_train)
+
+# Transform the training data to the selected feature importance
+selected_X_train = selector.transform(scaled_X_train)
+selected_X_test = selector.transform(scaled_X_test)
+# Initialize a new model with the salected features
+gbc_feature_select = GradientBoostingClassifier(n_estimators=100, max_depth=3, learning_rate=0.01, random_state=42)
+
+# fit the new model
+gbc_feature_select.fit(selected_X_train, y_drink_train)
+# Prediction on the selected test set
+y_drink_pred= gbc_feature_select.predict(selected_X_test)
+test_accuracy_select = accuracy_score(y_drink_test, y_drink_pred)
+precision_select = precision_score(y_drink_test, y_drink_pred)
+recall_select = recall_score(y_drink_test, y_drink_pred)
+f1_score_value_select = f1_score(y_drink_test, y_drink_pred)
+roc_auc_select = roc_auc_score(y_drink_test, y_drink_pred)
+mcc_select = matthews_corrcoef(y_drink_test, y_drink_pred)
+kappa_select = cohen_kappa_score(y_drink_test, y_drink_pred)
+cm_select = confusion_matrix(y_drink_test, y_drink_pred)
+
+# Print the performance metrics
+print("Accuracy:", test_accuracy_select, sep='\n')
+print("Precision:", precision_select, sep='\n')
+print("Recall:", recall_select, sep='\n')
+print("F1 Score:", f1_score_value_select, sep='\n')
+print("ROC AUC Score:", roc_auc_select, sep='\n')
+print("MCC score:", mcc_select, sep='\n')
+print("Cohen's kappa Coeff:", kappa_select, sep='\n')
+print("Confusion matrix:", cm_select, sep='\n')
+GAUSSIAN NAIVE BAYES CLASSIFIER
+# Instantiating the classifier
+gnb = GaussianNB()
+
+# Fit the model
+gnb.fit(scaled_X_train, y_drink_train)
+# Prediction on test set
+y_drink_pred = gnb.predict(scaled_X_test)
+PERFORMANCE EVALUATION
+test_accuracy = accuracy_score(y_drink_test, y_drink_pred)
+precision = precision_score(y_drink_test, y_drink_pred)
+recall = recall_score(y_drink_test, y_drink_pred)
+f1_score_value = f1_score(y_drink_test, y_drink_pred)
+roc_auc = roc_auc_score(y_drink_test, y_drink_pred)
+mcc = matthews_corrcoef(y_drink_test, y_drink_pred)
+kappa = cohen_kappa_score(y_drink_test, y_drink_pred)
+cm = confusion_matrix(y_drink_test, y_drink_pred)
+
+# Print the performance metrics
+print("Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("ROC AUC Score:", roc_auc, sep='\n')
+print("MCC score:", mcc, sep='\n')
+print("Cohen's kappa Coeff:", kappa, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+# Plotting AUC_ROC
+fpr, tpr, thresholds = roc_curve(y_drink_test, y_drink_pred)
+
+plt.figure()
+plt.plot(fpr, tpr, label='RFC (AUC = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1],'r--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Gaussian Naive Bayes roc_curve')
+plt.legend(loc="lower right")
+plt.show()
+# Plotting the confusion matrix
+fig, ax = plt.subplots(figsize=(8, 8))
+ax.imshow(cm)
+ax.grid(False)
+ax.xaxis.set(ticks=(0, 1), ticklabels=('Predicted 0s', 'Predicted 1s'))
+ax.yaxis.set(ticks=(0, 1), ticklabels=('Actual 0s', 'Actual 1s'))
+ax.set_ylim(1.5, -0.5)
+for i in range(2):
+    for j in range(2):
+        ax.text(j, i, cm[i, j], ha='center', va='center', color='red')
+plt.show()
+FEATURE IMPORTANCE
+# SeleckKBest with ANOVA F-value
+selector = SelectKBest(score_func=f_classif, k=3)
+X_train_selected = selector.fit_transform(scaled_X_train, y_drink_train)
+X_test_selected = selector.transform(scaled_X_test)
+
+# Instantiating the classifier
+gnb_feature_select = GaussianNB()
+
+# Fit the model
+gnb_feature_select.fit(X_train_selected, y_drink_train)
+# Define range of k values to try
+k_values = range(1, X.shape[1] + 1)
+
+# Initialize variables to store results
+best_k = None
+best_score = float('-inf')
+
+# Perform cross-validation for each k value
+for k in k_values:
+    # Initialize Gaussian Naive Bayes classifier
+    gnb = GaussianNB()
+
+    # Perform cross-validation with 5-fold
+    scores = cross_val_score(gnb, X_train_selected, y_drink_train, cv=5)
+
+    # Compute mean score
+    mean_score = scores.var() # Variance or mean
+
+    # Update best_k and best_score if needed
+    if mean_score > best_score:
+        best_k = k
+        best_score = mean_score
+
+# Print the best k value and corresponding score
+print("Best k value:", best_k)
+print("Best score:", best_score)
+# Prediction on selected test set
+y_drink_pred = gnb_feature_select.predict(X_test_selected)
+test_accuracy_select = accuracy_score(y_drink_test, y_drink_pred)
+precision_select = precision_score(y_drink_test, y_drink_pred)
+recall_select = recall_score(y_drink_test, y_drink_pred)
+f1_score_value_select = f1_score(y_drink_test, y_drink_pred)
+roc_auc_select = roc_auc_score(y_drink_test, y_drink_pred)
+mcc_select = matthews_corrcoef(y_drink_test, y_drink_pred)
+kappa_select = cohen_kappa_score(y_drink_test, y_drink_pred)
+cm_select = confusion_matrix(y_drink_test, y_drink_pred)
+
+# Print the performance metrics
+print("Test Accuracy:", test_accuracy_select, sep='\n')
+print("Precision:", precision_select, sep='\n')
+print("Recall:", recall_select, sep='\n')
+print("F1 Score:", f1_score_value_select, sep='\n')
+print("ROC AUC Score:", roc_auc_select, sep='\n')
+print("MCC score:", mcc_select, sep='\n')
+print("Cohen's kappa Coeff:", kappa_select, sep='\n')
+print("Confusion matrix:", cm_select, sep='\n')
+SMOKING PREDICTION (MULTICLASS-CLASSIFICATION)
+
+# Split the dataset into training and test sets
+scaled_X_train, scaled_X_test, y_smoke_train, y_smoke_test  = train_test_split(scaled_X, y_smoke, test_size=0.2, random_state=42)
+
+# Print the shapes of the resulting datasets
+print(scaled_X_train.shape, y_smoke_train.shape)
+print(scaled_X_test.shape, y_smoke_test.shape)
+# Check for imbalance
+imb_smoke = y_smoke.value_counts().reset_index()
+imb_smoke.columns = ['index', 'SMK_stat_type_cd']
+sns.barplot(x = "index", y = "SMK_stat_type_cd", data=imb_smoke)
+plt.xlabel("Target")
+plt.ylabel("Count")
+# Instantiating the classifier
+rfc = RandomForestClassifier()
+
+# Fit the model
+rfc.fit(scaled_X_train, y_smoke_train)
+y_smoke_pred = rfc.predict(scaled_X_test)
+accuracy = accuracy_score(y_smoke_test, y_smoke_pred)
+precision = precision_score(y_smoke_test, y_smoke_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_pred)
+
+# Print the performance metrics
+print("Accuracy:", accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+# Plotting the confusion matrix
+sns.heatmap(cm,
+            annot=True,
+            fmt='g',
+            xticklabels=['1', '2', '3'],
+            yticklabels=['1', '2', '3'])
+plt.ylabel('Actual', fontsize=13)
+plt.xlabel('Prediction', fontsize=13)
+plt.title('Confusion Matrix', fontsize=17)
+plt.show()
+# Instantiating the classifier
+log_reg = LogisticRegression(multi_class='ovr')
+
+# Fit the model
+log_reg.fit(scaled_X_train, y_smoke_train)
+y_smoke_pred = log_reg.predict(scaled_X_test)
+accuracy = accuracy_score(y_smoke_test, y_smoke_pred)
+precision = precision_score(y_smoke_test, y_smoke_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_pred)
+
+# Print the performance metrics
+print("Accuracy:", accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+# Plotting the confusion matrix
+sns.heatmap(cm,
+            annot=True,
+            fmt='g',
+            xticklabels=['1', '2', '3'],
+            yticklabels=['1', '2', '3'])
+plt.ylabel('Actual', fontsize=13)
+plt.xlabel('Prediction', fontsize=13)
+plt.title('Confusion Matrix', fontsize=17)
+plt.show()
+# Instantiate the model
+gbc = GradientBoostingClassifier(n_estimators=100, max_depth=3, learning_rate=1.0)
+
+# Train the model
+gbc.fit(scaled_X_train, y_smoke_train)
+y_smoke_pred = gbc.predict(scaled_X_test)
+accuracy = accuracy_score(y_smoke_test, y_smoke_pred)
+precision = precision_score(y_smoke_test, y_smoke_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_pred)
+
+# Print the performance metrics
+print("Accuracy:", accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+# Plotting the confusion matrix
+sns.heatmap(cm,
+            annot=True,
+            fmt='g',
+            xticklabels=['1', '2', '3'],
+            yticklabels=['1', '2', '3'])
+plt.ylabel('Actual', fontsize=13)
+plt.xlabel('Prediction', fontsize=13)
+plt.title('Confusion Matrix', fontsize=17)
+plt.show()
+# Instantiating the classifier
+gnb = GaussianNB()
+
+# Fit the model
+gnb.fit(scaled_X_train, y_smoke_train)
+y_smoke_pred = gnb.predict(scaled_X_test)
+accuracy = accuracy_score(y_smoke_test, y_smoke_pred)
+precision = precision_score(y_smoke_test, y_smoke_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_pred)
+
+# Print the performance metrics
+print("Accuracy:", accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+# Plotting the confusion matrix
+sns.heatmap(cm,
+            annot=True,
+            fmt='g',
+            xticklabels=['1', '2', '3'],
+            yticklabels=['1', '2', '3'])
+plt.ylabel('Actual', fontsize=13)
+plt.xlabel('Prediction', fontsize=13)
+plt.title('Confusion Matrix', fontsize=17)
+plt.show()
+RESAMPLING TECHNIQUE
+# Perform oversampling to cushion the imbalance dataset
+from imblearn.over_sampling import SMOTE
+# Instantiate SMOTE
+sm = SMOTE(random_state=42)
+
+# Resample the data
+scaled_X_train_res, y_smoke_train_res = sm.fit_resample(scaled_X_train, y_smoke_train.ravel())
+print("Before OverSampling, counts of label '1': {}".format(sum(y_smoke_train == 1)))
+print("Before OverSampling, counts of label '2': {}" .format(sum(y_smoke_train == 2)))
+print("Before OverSampling, counts of label '3': {} \n".format(sum(y_smoke_train == 3)))
+
+print('After OverSampling, the shape of train_X: {}'.format(scaled_X_train_res.shape))
+print('After OverSampling, the shape of train_y: {} \n'.format(y_smoke_train_res.shape))
+
+print("After OverSampling, counts of label '1': {}".format(sum(y_smoke_train_res == 1)))
+print("After OverSampling, counts of label '2': {}".format(sum(y_smoke_train_res == 2)))
+print("After OverSampling, counts of label '3': {} \n".format(sum(y_smoke_train_res == 3)))
+
+# Before resampling
+plt.figure(figsize=(10, 5))
+plt.subplot(1, 2, 1)
+sns.countplot(x=y_smoke_train, palette='Set1')
+plt.title('Class Distribution Before Resampling')
+plt.xlabel('Class')
+plt.ylabel('Count')
+
+# After resampling
+plt.subplot(1, 2, 2)
+sns.countplot(x=y_smoke_train_res, palette='Set2')
+plt.title('Class Distribution After SMOTE Resampling')
+plt.xlabel('Class')
+plt.ylabel('Count')
+
+plt.tight_layout()
+plt.show()
+RANDOM FOREST CLASSIFIER
+# Instantiating the classifier
+rfc = RandomForestClassifier()
+
+# Fit the model
+rfc.fit(scaled_X_train_res, y_smoke_train_res)
+# Prediction on test set
+y_smoke_pred = rfc.predict(scaled_X_test)
+test_accuracy = accuracy_score(y_smoke_test, y_smoke_pred)
+precision = precision_score(y_smoke_test, y_smoke_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_pred)
+
+# Print the performance metrics
+print("Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+sns.heatmap(cm,
+            annot=True,
+            fmt='g',
+            xticklabels=['1', '2', '3'],
+            yticklabels=['1', '2', '3'])
+plt.ylabel('Actual', fontsize=13)
+plt.xlabel('Prediction', fontsize=13)
+plt.title('Confusion Matrix', fontsize=17)
+plt.show()
+# Get feature importances
+feature_importances = rfc.feature_importances_
+feature_names = X.columns
+
+# Plot Feature Importance
+plt.figure(figsize=(10, 6))
+plt.barh(range(len(feature_importances)), feature_importances, align='center')
+plt.yticks(range(len(feature_importances)), feature_names)
+plt.xlabel('Feature importance')
+plt.ylabel('Feature')
+plt.title('Feature Importances of Random Forest Classifier')
+plt.show()
+LOGISTIC REGRESSION
+# Instantiating the classifier
+log_reg = LogisticRegression(multi_class='ovr')
+
+# Fit the model
+log_reg.fit(scaled_X_train_res, y_smoke_train_res)
+# Prediction on test set
+y_smoke_pred = log_reg.predict(scaled_X_test)
+test_accuracy = accuracy_score(y_smoke_test, y_smoke_pred)
+precision = precision_score(y_smoke_test, y_smoke_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_pred)
+
+# Print the performance metrics
+print ("Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+sns.heatmap(cm,
+            annot=True,
+            fmt='g',
+            xticklabels=['1', '2', '3'],
+            yticklabels=['1', '2', '3'])
+plt.ylabel('Actual', fontsize=13)
+plt.xlabel('Prediction', fontsize=13)
+plt.title('Confusion Matrix', fontsize=17)
+plt.show()
+# FEATURE IMPORTANCE
+
+coeff = log_reg.coef_
+
+avg_importance = np.mean(np.abs(coeff), axis=0)
+feature_importance = pd.DataFrame({'Feature': X.columns, 'Importance': avg_importance})
+feature_importance = feature_importance.sort_values('Importance', ascending=True)
+feature_importance.plot(x='Feature', y='Importance', kind='barh', figsize=(10, 6))
+GRADIENT BOOSTING CLASSIFIER
+# Instantiate the model
+gbc = GradientBoostingClassifier()
+
+# Train the model
+gbc.fit(scaled_X_train_res, y_smoke_train_res)
+# Prediction on test set
+y_smoke_test_pred = gbc.predict(scaled_X_test)
+test_accuracy = accuracy_score(y_smoke_test, y_smoke_test_pred)
+precision = precision_score(y_smoke_test, y_smoke_test_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_test_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_test_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_test_pred)
+
+# Print the performance metrics
+print("Test Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+sns.heatmap(cm,
+            annot=True,
+            fmt='g',
+            xticklabels=['1', '2', '3'],
+            yticklabels=['1', '2', '3'])
+plt.ylabel('Actual', fontsize=13)
+plt.xlabel('Prediction', fontsize=13)
+plt.title('Confusion Matrix', fontsize=17)
+plt.show()
+# Get feature importances
+feature_importances = gbc.feature_importances_
+feature_names = X.columns
+
+# Plot Feature Importance
+plt.figure(figsize=(10, 6))
+plt.barh(range(len(feature_importances)), feature_importances, align='center')
+plt.yticks(range(len(feature_importances)), feature_names)
+plt.xlabel('Feature importance')
+plt.ylabel('Feature')
+plt.title('Feature Importances of Gradient Boosting Classifier')
+plt.show()
+GAUSSIAN NAIVE BAYES CLASSIFIER
+# Instantiating the classifier
+gnb = GaussianNB()
+
+# Fit the model
+gnb.fit(scaled_X_train_res, y_smoke_train_res)
+# Prediction on test set
+y_smoke_pred = gnb.predict(scaled_X_test)
+test_accuracy = accuracy_score(y_smoke_test, y_smoke_pred)
+precision = precision_score(y_smoke_test, y_smoke_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_pred)
+
+# Print the performance metrics
+print("Test Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+sns.heatmap(cm,
+            annot=True,
+            fmt='g',
+            xticklabels=['1', '2', '3'],
+            yticklabels=['1', '2', '3'])
+plt.ylabel('Actual', fontsize=13)
+plt.xlabel('Prediction', fontsize=13)
+plt.title('Confusion Matrix', fontsize=17)
+plt.show()
+FEATURE IMPORTANCE
+# SeleckKBest with ANOVA F-value
+selector = SelectKBest(score_func=f_classif, k=3)
+X_train_selected = selector.fit_transform(scaled_X_train_res, y_smoke_train_res)
+X_test_selected = selector.transform(scaled_X_test)
+
+# Instantiating the classifier
+gnb_feature_select = GaussianNB()
+
+# Fit the model
+gnb_feature_select.fit(X_train_selected, y_smoke_train_res)
+# Define range of k values to try
+k_values = range(1, X.shape[1] + 1)
+
+# Initialize variables to store results
+best_k = None
+best_score = float('-inf')
+
+# Perform cross-validation for each k value
+for k in k_values:
+    # Initialize Gaussian Naive Bayes classifier
+    gnb = GaussianNB()
+
+    # Perform cross-validation with 5-fold
+    scores = cross_val_score(gnb, X_train_selected, y_smoke_train_res, cv=5)
+
+    # Compute mean score
+    mean_score = scores.var() # Variance or mean
+
+    # Update best_k and best_score if needed
+    if mean_score > best_score:
+        best_k = k
+        best_score = mean_score
+
+# Print the best k value and corresponding score
+print("Best k value:", best_k)
+print("Best score:", best_score)
+# Prediction on selected test set
+y_smoke_test_pred = gnb_feature_select.predict(X_test_selected)
+test_accuracy = accuracy_score(y_smoke_test, y_smoke_test_pred)
+precision = precision_score(y_smoke_test, y_smoke_test_pred, average='macro')
+recall = recall_score(y_smoke_test, y_smoke_test_pred, average='macro')
+f1_score_value = f1_score(y_smoke_test, y_smoke_test_pred, average='macro')
+cm = confusion_matrix(y_smoke_test, y_smoke_test_pred)
+
+# Print the performance metrics
+print("Test Accuracy:", test_accuracy, sep='\n')
+print("Precision:", precision, sep='\n')
+print("Recall:", recall, sep='\n')
+print("F1 Score:", f1_score_value, sep='\n')
+print("Confusion matrix:", cm, sep='\n')
+THE END
