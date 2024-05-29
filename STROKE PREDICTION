@@ -1,0 +1,384 @@
+install.packages("caret")
+install.packages("readr")
+install.packages("e1071")
+install.packages("tidyverse")
+install.packages("dplyr")
+install.packages("tidyr")
+install.packages("naniar")
+install.packages("ggplot2")
+install.packages("corrplot")
+install.packages("RColorBrewer")
+install.packages("xtable")
+install.packages("psych")
+install.packages("ggcorrplot")
+install.packages("gridExtra")
+install.packages("stringi")
+install.packages("ROSE")
+library(ggcorrplot)
+library(psych)
+library(xtable)
+library(corrplot)
+library(RColorBrewer)
+library(caret)
+library(readr)
+library(e1071)
+library(tidyverse)
+library(dplyr)
+library(tidyr)
+library(naniar)
+library(ggplot2)
+library(corrplot)
+library(gridExtra)
+library(ROSE)
+
+#loading the dataset
+Brain_stroke = read.csv("C:/Users/otasp/Desktop/CIS4047 DATA SCIENCE FOUNDATION/ICA/healthcare_stroke.csv")
+Brain_stroke
+
+#Structure of dataset
+str(Brain_stroke)
+
+#summary of dataset
+summary(Brain_stroke)
+
+#dimension of dataset
+dim(Brain_stroke)
+
+#Data pre-processing
+#checking for missing values
+
+#writing out all offending strings)
+Brain_stroke1 = Brain_stroke %>%
+  replace_with_na_all(condition = ~.x %in% common_na_strings)
+Brain_stroke1
+
+#summing up all NAs
+sum(is.na(Brain_stroke1$id))
+sum(is.na(Brain_stroke1$gender))
+sum(is.na(Brain_stroke1$age))
+sum(is.na(Brain_stroke1$hypertension))
+sum(is.na(Brain_stroke1$heart_disease))
+sum(is.na(Brain_stroke1$ever_married))
+sum(is.na(Brain_stroke1$work_type))
+sum(is.na(Brain_stroke1$Residence_type))
+sum(is.na(Brain_stroke1$avg_glucose_level))
+sum(is.na(Brain_stroke1$bmi))
+sum(is.na(Brain_stroke1$smoking_status))
+sum(is.na(Brain_stroke1$stroke))
+
+#Replacing NA with the mean of the column
+#first, convert bmi from character to numeric
+Brain_stroke1$bmi = as.numeric(Brain_stroke1$bmi)
+Brain_stroke1$bmi
+str(Brain_stroke1$bmi)
+
+Brain_stroke1$bmi[is.na(Brain_stroke1$bmi)] = mean(Brain_stroke1$bmi, na.rm = TRUE)
+Brain_stroke1
+
+#Structure of dataset
+str(Brain_stroke1)
+
+#dropping other in gender, Never_worked in work type
+
+Brain_stroke2 = Brain_stroke1[!Brain_stroke1$gender == 'Other',]
+Brain_stroke2
+
+Brain_stroke3 = Brain_stroke2[!Brain_stroke2$work_type == 'Never_worked',]
+Brain_stroke3
+
+str(Brain_stroke3)
+
+#changing categorical data to factor
+
+Brain_stroke3$smoking_status = as.factor(Brain_stroke3$smoking_status)
+Brain_stroke3$smoking_status
+
+Brain_stroke3$gender = as.factor(Brain_stroke3$gender)
+Brain_stroke3$gender
+
+Brain_stroke3$ever_married = as.factor(Brain_stroke3$ever_married)
+Brain_stroke3$ever_married
+
+
+Brain_stroke3$work_type = as.factor(Brain_stroke3$work_type)
+Brain_stroke3$work_type
+
+Brain_stroke3$Residence_type = as.factor(Brain_stroke3$Residence_type)
+Brain_stroke3$Residence_type
+
+
+Brain_stroke3$stroke = as.factor(Brain_stroke3$stroke)
+Brain_stroke3$stroke
+
+
+Brain_stroke3$hypertension = as.factor(Brain_stroke3$hypertension)
+Brain_stroke3$stroke
+
+
+Brain_stroke3$heart_disease = as.factor(Brain_stroke3$heart_disease)
+Brain_stroke3$heart_disease      
+
+str(Brain_stroke3)
+
+#Explanatory Data analysis
+
+hist(Brain_stroke3$age, breaks = 25)
+
+hist(Brain_stroke3$age, xlab= Brain_stroke3$gender, main = "Age Distribution", col="darkgrey", border=FALSE)
+
+boxplot(age~stroke, data=Brain_stroke3, main= "Age distribution", col=c("red", "green"), border=TRUE)
+
+boxplot(bmi~stroke, data=Brain_stroke3, main= "Age distribution", col=c("red", "green"), border=TRUE)
+
+#checking gender vs stroke using graph and chisq-test
+
+table(data.frame(gender=Brain_stroke3$gender, stroke=Brain_stroke3$stroke))
+
+chisq.test(Brain_stroke3$gender, Brain_stroke3$stroke)
+
+#graph
+ggplot(Brain_stroke3, aes(x=gender, fill=stroke))+
+  geom_bar(aes(y=..count../tapply(..count.., ..x.., sum)[..x..]), position = "dodge")+
+  geom_text(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..], label=scales::percent(..count../tapply(..count.., ..x.. ,sum)[..x..]) ), stat="count", position=position_dodge(0.9), vjust=-0.5)+ylab('Percent of Gender, %') +
+  scale_y_continuous(labels = scales::percent)
+
+#checking hypertension vs stroke using graph and chisq-test
+
+table(data.frame(hypertension=Brain_stroke3$hypertension, stroke=Brain_stroke3$stroke))
+
+chisq.test(Brain_stroke3$hypertension, Brain_stroke3$stroke)
+
+#graph
+ggplot(Brain_stroke3, aes(x=hypertension, fill=stroke))+
+  geom_bar(aes(y=..count../tapply(..count.., ..x.., sum)[..x..]), position = "dodge")+
+  geom_text(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..], label=scales::percent(..count../tapply(..count.., ..x.. ,sum)[..x..]) ), stat="count", position=position_dodge(0.9), vjust=-0.5)+ylab('Percent of Hypertension Group, %') +
+  scale_y_continuous(labels = scales::percent)
+
+#checking heart disease vs stroke using graph and chisq-test
+
+table(data.frame(heart_disease=Brain_stroke3$heart_disease, stroke=Brain_stroke3$stroke))         
+
+chisq.test(Brain_stroke3$heart_disease, Brain_stroke3$stroke)
+
+
+ggplot(Brain_stroke3, aes(x=heart_disease, fill=stroke))+
+  geom_bar(aes(y=..count../tapply(..count.., ..x.., sum)[..x..]), position = "dodge")+
+  geom_text(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..], label=scales::percent(..count../tapply(..count.., ..x.. ,sum)[..x..]) ), stat="count", position=position_dodge(0.9), vjust=-0.5)+ylab('Percent of Heart disease, %') +
+  scale_y_continuous(labels = scales::percent)
+
+#checking ever_married vs stroke using graph and chisq-test
+
+table(data.frame(ever_married=Brain_stroke3$ever_married, stroke=Brain_stroke3$stroke)) 
+
+chisq.test(Brain_stroke3$ever_married, Brain_stroke3$stroke)
+
+ggplot(Brain_stroke3, aes(x=ever_married, fill=as.factor(stroke)))+
+  geom_bar(aes(y=..count../tapply(..count.., ..x.., sum)[..x..]), position = "dodge")+
+  geom_text(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..], label=scales::percent(..count../tapply(..count.., ..x.. ,sum)[..x..]) ), stat="count", position=position_dodge(0.9), vjust=-0.5)+ylab('Percent of Ever Married, %') +
+  scale_y_continuous(labels = scales::percent)
+
+#checking work_type vs stroke using graph and chisq-test
+
+table(data.frame(work_type=Brain_stroke3$work_type, stroke=Brain_stroke3$stroke))
+
+chisq.test(Brain_stroke3$work_type, Brain_stroke3$stroke)
+
+
+ggplot(Brain_stroke3, aes(x=work_type, fill=as.factor(stroke)))+
+  geom_bar(aes(y=..count../tapply(..count.., ..x.., sum)[..x..]), position = "dodge")+
+  geom_text(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..], label=scales::percent(..count../tapply(..count.., ..x.. ,sum)[..x..]) ), stat="count", position=position_dodge(0.9), vjust=-0.5)+ylab('Percent of Work Type, %') +
+  scale_y_continuous(labels = scales::percent)
+
+#checking residence_type vs stroke using graph and chisq-test
+
+table(data.frame(Residence_type=Brain_stroke3$Residence_type, stroke=Brain_stroke3$stroke))
+
+chisq.test(Brain_stroke3$Residence_type, Brain_stroke3$stroke)
+
+
+ggplot(Brain_stroke3, aes(x=Residence_type, fill=as.factor(stroke)))+
+  geom_bar(aes(y=..count../tapply(..count.., ..x.., sum)[..x..]), position = "dodge")+
+  geom_text(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..], label=scales::percent(..count../tapply(..count.., ..x.. ,sum)[..x..]) ), stat="count", position=position_dodge(0.9), vjust=-0.5)+ylab('Percent of Residence type, %') +
+  scale_y_continuous(labels = scales::percent)
+
+#checking smoking_status vs stroke using graph and chisq-test
+
+table(data.frame(smoking_status=Brain_stroke3$smoking_status, stroke=Brain_stroke3$stroke))
+
+chisq.test(Brain_stroke3$smoking_status, Brain_stroke3$stroke)
+
+
+ggplot(Brain_stroke3, aes(x=smoking_status, fill=as.factor(stroke)))+
+  geom_bar(aes(y=..count../tapply(..count.., ..x.., sum)[..x..]), position = "dodge")+
+  geom_text(aes( y=..count../tapply(..count.., ..x.. ,sum)[..x..], label=scales::percent(..count../tapply(..count.., ..x.. ,sum)[..x..]) ), stat="count", position=position_dodge(0.9), vjust=-0.5)+ylab('Percent of Smoking Statue, %') +
+  scale_y_continuous(labels = scales::percent)
+
+#checking avg_glucose vs stroke
+ggplot(Brain_stroke3, aes(x=stroke, y=avg_glucose_level, fill=stroke)) + 
+  geom_boxplot() + 
+  labs(subtitle="Avg_glucose by stroke")
+
+lm.stroke_glucose = lm(as.numeric(Brain_stroke3$stroke) ~ Brain_stroke3$avg_glucose_level)
+
+summary(lm.stroke_glucose)
+
+lm(formula = as.numeric(Brain_stroke3$stroke) ~ Brain_stroke3$avg_glucose_level)
+
+#checking age with stroke
+ggplot(Brain_stroke3, aes(x=stroke, y=age, fill=stroke)) + 
+  geom_boxplot() + 
+  labs(subtitle="Stroke by Age")
+
+lm.stroke_age = lm(as.numeric(Brain_stroke3$stroke) ~ Brain_stroke3$age)
+
+summary(lm.stroke_age)
+
+lm(formula = as.numeric(Brain_stroke3$stroke) ~ Brain_stroke3$age)
+
+#Checking BMI with Stroke
+ggplot(Brain_stroke3, aes(x=stroke, y=bmi, fill=stroke)) + 
+  geom_boxplot() + 
+  labs(subtitle="Stoke by BMI")
+
+lm.stroke_bmi = lm(as.numeric(Brain_stroke3$stroke) ~ Brain_stroke3$bmi)
+
+summary(lm.stroke_bmi)
+
+lm(formula = as.numeric(Brain_stroke3$stroke) ~ Brain_stroke3$bmi)
+
+#Visualization Using Histogram with Noraml distribution - Age
+hist_age = hist(Brain_stroke3$age, xlim=c(0,100),
+                main="Histogram of Age with Normal Distribution",
+                xlab="Age",las=1)
+xfit = seq(min(Brain_stroke3$age), max(Brain_stroke3$age))
+yfit = dnorm(xfit, mean=mean(Brain_stroke3$age), sd=sd(Brain_stroke3$age))
+yfit = yfit*diff(hist_age$mids[1:2])*length(Brain_stroke3$age)
+lines(xfit, yfit, col="blue",lwd=2)
+
+#Visualization Using Histogram with Noraml distribution - Avg_glucose_level
+hist_avg_glucose_level = hist(Brain_stroke3$avg_glucose_level, xlim=c(0,100),
+                              main="Histogram of Average Glucose level with Normal Distribution",
+                              xlab="Average glucose level",las=1)
+xfit = seq(min(Brain_stroke3$avg_glucose_level), max(Brain_stroke3$avg_glucose_level))
+yfit = dnorm(xfit, mean=mean(Brain_stroke3$avg_glucose_level), sd=sd(Brain_stroke3$avg_glucose_level))
+yfit = yfit*diff(hist_avg_glucose_level$mids[1:2])*length(Brain_stroke3$avg_glucose_level)
+lines(xfit, yfit, col="red",lwd=2)
+
+#Visualization Using Histogram with Noraml distribution - BMI
+hist_bmi = hist(Brain_stroke3$bmi, xlim=c(0,100),
+                main="Histogram of BMI with Normal Distribution",
+                xlab="BMIl",las=1)
+xfit = seq(min(Brain_stroke3$bmi), max(Brain_stroke3$bmi))
+yfit = dnorm(xfit, mean=mean(Brain_stroke3$bmi), sd=sd(Brain_stroke3$bmi))
+yfit = yfit*diff(hist_bmi$mids[1:2])*length(Brain_stroke3$bmi)
+lines(xfit, yfit, col="red",lwd=2)
+
+str(Brain_stroke3)
+summary(Brain_stroke3)
+dim(Brain_stroke3)
+
+#DATA PARTITION
+
+set.seed(123)
+
+intrain = createDataPartition(y = Brain_stroke3$stroke, p= 0.7, list = FALSE)
+
+training = Brain_stroke3[intrain,]
+
+testing = Brain_stroke3[-intrain,]
+
+head(training)
+head(testing)
+
+summary(training)
+summary(testing)
+
+table(training$stroke)
+table(testing$stroke)
+
+#dimensions of dataset
+dim(training)
+dim(testing)
+
+#using trainControl() method
+
+trctrl = trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+#Training using SVM
+
+svm_linear = train(stroke ~., data = training, method = "svmLinear", trControl=trctrl, 
+                   preProcess = c("center", "scale"), tuneLength = 10)
+svm_linear
+
+
+#making predictions using the model for test set
+
+test_pred = predict(svm_linear, newdata = testing)
+test_pred
+
+
+#Using confusionmatrix for accuracy 
+
+confusionMatrix(table(test_pred, testing$stroke))
+
+#Building svmlinear Classifier
+
+grid = expand.grid(C = c(0, 0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 5))
+
+#making predictions using the model for train set
+
+svm_linear_Grid = train(stroke ~., data = training, method = "svmLinear", trControl=trctrl, preProcess = c("center", "scale"), tuneGrid = grid, tuneLength = 10)
+svm_linear_Grid
+
+plot(svm_linear_Grid)
+
+#from the confusion matrix, the data is imbalance
+#using over sampling method for a balanced data
+
+prop.table((table(training$stroke)))
+
+
+over_sampling = ovun.sample(stroke~., data = training, method = "over")$data
+table(over_sampling$stroke)
+summary(over_sampling)
+
+
+svm_over_sampling = train(stroke ~., data = over_sampling, method = "svmLinear", trControl=trctrl, 
+                          preProcess = c("center", "scale"), tuneGrid = grid, tuneLength = 10)
+svm_over_sampling
+
+#using predict() method
+test_pred = predict(svm_over_sampling, newdata = testing)
+test_pred
+
+#using confusionmatrix
+confusionMatrix(table(test_pred, testing$stroke))
+
+#using under sampling method
+
+under_sampling = ovun.sample(stroke~., data = training, method = "under")$data
+table(under_sampling$stroke)
+
+svm_under_sampling = train(stroke ~., data = under_sampling, method = "svmLinear", trControl=trctrl, 
+                           preProcess = c("center", "scale"), tuneGrid = grid, tuneLength = 10)
+svm_under_sampling
+
+test_pred = predict(svm_under_sampling, newdata = testing)
+test_pred
+
+#using confusionmatrix
+confusionMatrix(table(test_pred, testing$stroke))
+
+#using both sampling
+both_sampling = ovun.sample(stroke~., data = training, method = "both")$data
+table(both_sampling$stroke)
+
+svm_both_sampling = train(stroke ~., data = both_sampling, method = "svmLinear", trControl=trctrl, 
+                          preProcess = c("center", "scale"), tuneGrid = grid, tuneLength = 10)
+svm_both_sampling
+
+test_pred = predict(svm_both_sampling, newdata = testing)
+test_pred
+
+#using confusionmatrix
+confusionMatrix(table(test_pred, testing$stroke))
